@@ -2,7 +2,7 @@
 # The data can then be loaded with `rails db:seed` (or along with the creation of the db with `rails db:setup`).
 
 if Rails.env.production?
-  puts "Database seeding has been configured to work only in non production settings"
+  Rails.logger.info "Database seeding has been configured to work only in non production settings"
   return
 end
 
@@ -72,7 +72,9 @@ Organization.seed_items(sf_org)
 
 # Assign a value to some organization items to verify totals are working
 Organization.all.each do |org|
-  org.items.where(value_in_cents: 0).limit(10).update_all(value_in_cents: 100)
+  org.items.where(value_in_cents: 0).limit(10).each do |item|
+    item.update(value_in_cents: 100)
+  end
 end
 
 # ----------------------------------------------------------------------------
@@ -166,29 +168,29 @@ note = [
   # ----------------------------------------------------------------------------
 
   partner = Partners::Partner.create!({
-    name: p.name,
-    address1: Faker::Address.street_address,
-    address2: "",
-    city: Faker::Address.city,
-    state: Faker::Address.state_abbr,
-    zip_code: Faker::Address.zip,
-    website: Faker::Internet.domain_name,
-    zips_served: Faker::Address.zip,
-    diaper_bank_id: pdx_org.id,
-    diaper_partner_id: p.id,
-    executive_director_name: Faker::Name.name,
-    executive_director_email: p.email,
-    executive_director_phone: Faker::PhoneNumber.phone_number,
-    program_contact_name: Faker::Name.name,
-    program_contact_email: Faker::Internet.email,
-    program_contact_phone: Faker::PhoneNumber.phone_number,
-    program_contact_mobile: Faker::PhoneNumber.phone_number,
-    pick_up_name: Faker::Name.name,
-    pick_up_email: Faker::Internet.email,
-    pick_up_phone: Faker::PhoneNumber.phone_number,
-    partner_status: partner_status_map[partner_option[:status]] || "pending",
-    status_in_diaper_base: partner_option[:status]
-  })
+                                        name: p.name,
+                                        address1: Faker::Address.street_address,
+                                        address2: "",
+                                        city: Faker::Address.city,
+                                        state: Faker::Address.state_abbr,
+                                        zip_code: Faker::Address.zip,
+                                        website: Faker::Internet.domain_name,
+                                        zips_served: Faker::Address.zip,
+                                        diaper_bank_id: pdx_org.id,
+                                        diaper_partner_id: p.id,
+                                        executive_director_name: Faker::Name.name,
+                                        executive_director_email: p.email,
+                                        executive_director_phone: Faker::PhoneNumber.phone_number,
+                                        program_contact_name: Faker::Name.name,
+                                        program_contact_email: Faker::Internet.email,
+                                        program_contact_phone: Faker::PhoneNumber.phone_number,
+                                        program_contact_mobile: Faker::PhoneNumber.phone_number,
+                                        pick_up_name: Faker::Name.name,
+                                        pick_up_email: Faker::Internet.email,
+                                        pick_up_phone: Faker::PhoneNumber.phone_number,
+                                        partner_status: partner_status_map[partner_option[:status]] || "pending",
+                                        status_in_diaper_base: partner_option[:status]
+                                      })
 
   Partners::User.create!(
     name: Faker::Name.name,
@@ -388,7 +390,7 @@ end
 # ----------------------------------------------------------------------------
 
 def seed_quantity(item_name, organization, storage_location, quantity)
-  return if quantity == 0
+  return if quantity.zero?
 
   item = Item.find_by(name: item_name, organization: organization)
 
@@ -513,7 +515,7 @@ end
   status = count > 15 ? 'fulfilled' : 'pending'
 
   org_items = pdx_org.items.pluck(:id)
-  request_items = Array.new(Faker::Number.within(range: 3..8)).map do |item|
+  request_items = Array.new(Faker::Number.within(range: 3..8)).map do |_item|
     {
       "item_id" => org_items.sample,
       "quantity" => Faker::Number.within(range: 5..10)
@@ -545,8 +547,8 @@ end
     business_name: Faker::Company.name,
     latitude: rand(-90.000000000...90.000000000),
     longitude: rand(-180.000000000...180.000000000),
-    created_at: (Date.today - rand(15).days),
-    updated_at: (Date.today - rand(15).days),
+    created_at: (Time.zone.today - rand(15).days),
+    updated_at: (Time.zone.today - rand(15).days),
   )
 end
 
@@ -570,9 +572,9 @@ comments = [
     organization_id: pdx_org.id,
     storage_location_id: storage_location.id,
     amount_spent_in_cents: rand(200..10_000),
-    issued_at: (Date.today - rand(15).days),
-    created_at: (Date.today - rand(15).days),
-    updated_at: (Date.today - rand(15).days),
+    issued_at: (Time.zone.today - rand(15).days),
+    created_at: (Time.zone.today - rand(15).days),
+    updated_at: (Time.zone.today - rand(15).days),
     vendor_id: vendor.id
   )
 end
